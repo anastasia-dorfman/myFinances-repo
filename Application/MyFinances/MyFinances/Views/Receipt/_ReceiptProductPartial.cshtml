@@ -1,0 +1,42 @@
+﻿@model MyFinances.Models.ReceiptProductVM
+
+<div class="form-inline">
+    <div class="row">
+        <div class="col-md-2">
+            <select class="form-select subcategory-dropdown" asp-items="Model.ProductSubcategories" id="subcategoryDropdown">
+                <option selected value=0>ALL SUBCATEGORIES</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select class="form-select category-dropdown" asp-items="Model.ProductCategories" id="categoryDropdown">
+                <option selected value=0>ALL CATEGORIES</option>
+            </select>
+        </div>
+        <div class="col-lg-2">
+            <select class="form-select product-dropdown" asp-for="ReceiptProduct.ProductId" asp-items="Model.Products" id="productDropdown">
+                <option selected value=0>-- SELECT PRODUCT --</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select class="form-select" asp-for="ReceiptProduct.Consumer" asp-items="Model.Consumers">
+                <option selected value=0>ALL CONSUMERS</option>
+            </select>
+        </div>
+        <div class="col-sm-1">
+            <input class="form-control" asp-for="ReceiptProduct.Quantity" type="number" min="1"/>
+            <span class="text-danger" asp-validation-for="ReceiptProduct.Quantity"></span>
+        </div>
+        <div class="col-sm-1">
+            <input class="form-control" asp-for="ReceiptProduct.Price" type="number" min="0"/>
+            <span class="text-danger" asp-validation-for="ReceiptProduct.Price"></span>
+        </div>
+        <div class="col-sm-1">
+            <input class="form-control" asp-for="ReceiptProduct.Amount" type="number" min="0"/>
+            <span class="text-danger" asp-validation-for="ReceiptProduct.Amount"></span>
+        </div>
+        <div class="col-sm-1">
+            <button class="btn remove-product"><i class="bi bi-trash"></i> Remove</button>
+        </div>
+    </div>
+</div>
+

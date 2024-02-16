@@ -1,0 +1,41 @@
+﻿@model IEnumerable<MyFinances.Model.ProductSubcategoryDTO>
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Index</h1>
+
+<p>
+    <a asp-action="Create">Create New</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                Subcategory Name
+            </th>
+            <th>
+                Category Name
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.Name)
+            </td>
+            <td>
+                    @Html.DisplayFor(modelItem => item.ProductCategory.Name)
+            </td>
+            <td>
+                @* @Html.ActionLink("Edit", "Edit", new { id = item.ProductSubcategoryId }) | *@
+                @* @Html.ActionLink("Details", "Details", new { id = item.ProductSubcategoryId }) | *@
+                @Html.ActionLink("Delete", "Delete", new { id = item.ProductSubcategoryId })
+            </td>
+        </tr>
+}
+    </tbody>
+</table>

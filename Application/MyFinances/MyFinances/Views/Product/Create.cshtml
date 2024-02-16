@@ -1,0 +1,105 @@
+﻿@* @model MyFinances.Model.Product *@
+@model MyFinances.Models.ProductCreateEditVM
+
+@{
+    ViewData["Title"] = "Create";
+}
+
+<h1>Create Product</h1>
+
+<h4>Product</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Create">
+            @* <div asp-validation-summary="ModelOnly" class="text-danger"></div> *@
+            @if (Model.Product.Errors.Count > 0)
+            {
+                <div class="text-danger">
+                    <ul>
+                        @foreach (var e in Model.Product.Errors
+                       .Where(err => err.ErrorType == MyFinances.Types.ErrorType.Business))
+                        {
+                            <li>@e.Description</li>
+                        }
+                    </ul>
+                </div>
+            }
+            <div class="form-group">
+                <label asp-for="Product.Name" class="control-label"></label>
+                <input asp-for="Product.Name" class="form-control" />
+                <span asp-validation-for="Product.Name" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="ProductCategories" class="control-label"></label>
+                @* <input asp-for="ProductSubcategoryId" class="form-control" /> *@
+                @* <select asp-for="Product.ProductCategoryId" asp-items="Model.ProductCategories" class="form-select"> *@
+                <select asp-for="SelectedCategoryId" asp-items="Model.ProductCategories" class="form-select" id="categoryDropdown">
+                    <option selected value=0 >--- SELECT CATEGORY ---</option>
+                </select>
+                @* <span asp-validation-for="ProductCategories" class="text-danger"></span> *@
+            </div>
+            <div class="form-group">
+                <label asp-for="Product.ProductSubcategoryId" class="control-label"></label>
+                @* <input asp-for="ProductSubcategoryId" class="form-control" /> *@
+                <select asp-for="Product.ProductSubcategoryId" asp-items="Model.ProductSubcategories" class="form-select" id="subcategoryDropdown">
+                    <option selected value="">--- SELECT SUBCATEGORY ---</option>
+                </select>
+                <span asp-validation-for="Product.ProductSubcategoryId" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Create" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $("#categoryDropdown").change(function () {
+                var categoryId = $(this).val();
+                console.log(categoryId);
+                $.ajax({
+                    type: "GET",
+                    url: "/Product/GetSubcategoriesByCategory",
+                    data: { categoryId: categoryId },
+                    success: function (data) {
+                        $("#subcategoryDropdown").empty();
+                        if (categoryId == 0) {
+                            $("#subcategoryDropdown").append('<option value="">' + "--- SELECT SUBCATEGORY ---" + '</option>');
+                        }
+                        $.each(data, function (i, item) {
+                            $("#subcategoryDropdown").append('<option value="' + item.value + '">' + item.text + '</option>');
+                        });
+                    },
+                    error: function (xhr, status, error) {
+                        console.error(xhr.responseText);
+                    }
+                });
+            });
+
+            $("#subcategoryDropdown").change(function () {
+                var subcategoryId = $(this).val();
+                $.ajax({
+                    type: "GET",
+                    url: "/Product/GetCategoryBySubcategory",
+                    data: { subcategoryId: subcategoryId },
+                    success: function (categoryId) {
+                        $("#categoryDropdown").val(categoryId);
+                    },
+                    error: function (xhr, status, error) {
+                        console.error(xhr.responseText);
+                    }
+                });
+            });
+        });
+    </script>
+}

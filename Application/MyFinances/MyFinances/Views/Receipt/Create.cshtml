@@ -1,0 +1,309 @@
+﻿@model MyFinances.Models.ReceiptCreateEditVM
+
+@{
+    ViewData["Title"] = "Create";
+}
+
+<h1>Create</h1>
+
+<h4>Receipt</h4>
+<hr />
+<div class="row">
+        <form asp-action="Create">
+        <div class="col-md-4">
+            @if (Model.Receipt.Errors.Count > 0)
+            {
+                <div class="text-danger">
+                    <ul>
+                        @foreach (var e in Model.Receipt.Errors
+                       .Where(err => err.ErrorType == MyFinances.Types.ErrorType.Business))
+                        {
+                            <li>@e.Description</li>
+                        }
+                    </ul>
+                </div>
+            }
+            @* <input hidden asp-for="Receipt.ReceiptId" class="form-control" /> *@
+            <div class="form-group">
+                <label asp-for="Receipt.Date" class="control-label"></label>
+                <input asp-for="Receipt.Date" class="form-control" type="date" />
+                <span asp-validation-for="Receipt.Date" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Receipt.Comment" class="control-label"></label>
+                <textarea asp-for="Receipt.Comment" class="form-control"></textarea>
+                <span asp-validation-for="Receipt.Comment" class="text-danger"></span>
+            </div>
+            <div class="form-group form-check">
+                <label class="form-check-label">
+                    <input class="form-check-input" asp-for="Receipt.IsRecurring" /> @Html.DisplayNameFor(model => model.Receipt.IsRecurring)
+                </label>
+            </div>
+            <div class="form-group">
+                <label asp-for="Receipt.AccountId" class="control-label"></label>
+                @* <input asp-for="Receipt.AccountName" class="form-control" /> *@
+                <select asp-for="Receipt.AccountId" asp-items="Model.Accounts" class="form-select">
+                    <option selected value=0>--- SELECT ACCOUNT ---</option>
+                </select>
+                <span asp-validation-for="Receipt.AccountId" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Receipt.RetailerId" class="control-label"></label>
+                <select asp-for="Receipt.RetailerId" asp-items="Model.Retailers" class="form-select">
+                    <option selected value=0>--- SELECT RETAILER ---</option>
+                </select>
+                <span asp-validation-for="Receipt.RetailerId" class="text-danger"></span>
+            </div>
+        </div>
+        <br />
+            <div>
+                <div id="receiptProductsContainer">
+                <button class="btn" id="addProductBtn"><i class="bi bi-plus"></i> Add Product</button>
+                <div class="row">
+                    <div class="col-md-2">
+                        <label class="control-label">SUBCATEGORIES</label>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="control-label">CATEGORIES</label>
+                    </div>
+                    <div class="col-lg-2">
+                        <label class="control-label">PRODUCTS</label>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="control-label">CONSUMERS</label>
+                    </div>
+                    <div class="col-sm-1">
+                        <label class="control-label">QUANTITY</label>
+                    </div>
+                    <div class="col-sm-1">
+                        <label class="control-label">PRICE</label>
+                    </div>
+                    <div class="col-sm-1">
+                        <label class="control-label">AMOUNT</label>
+                    </div>
+                </div>
+
+                    @Html.Partial("_ReceiptProductPartial", Model.ReceiptProducts.FirstOrDefault())
+                </div>
+                <div class="form-group">
+                    <input type="submit" value="Create" class="btn btn-primary" />
+                </div>
+            </div>
+        </form>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Function to add a new ReceiptProduct fields section
+            function addReceiptProduct() {
+                $.get('/Receipt/GetReceiptProductPartial', function (data) {
+                    $('#receiptProductsContainer').append(data);
+                });
+            }
+
+            // Event handler for adding ReceiptProduct
+            $(document).on('click', '#addProductBtn', function (event) {
+                event.preventDefault();
+                addReceiptProduct();
+            });
+
+            // Event handler for removing ReceiptProduct
+            $('#receiptProductsContainer').on('click', '.remove-product', function () {
+                $(this).closest('.form-inline').remove();
+            });
+
+            // Event handler for category change
+            $(document).on('change', '.category-dropdown', function () {
+                var categoryId = $(this).val();
+                var subcategoryDropdown = $(this).closest('.form-inline').find('.subcategory-dropdown');
+                $.ajax({
+                    type: "GET",
+                    url: "/Receipt/GetSubcategoriesByCategory",
+                    data: { categoryId: categoryId },
+                    success: function (subcategoriesData) {
+                        subcategoryDropdown.empty();
+                        subcategoryDropdown.append('<option value=0>-- SUBCATEGORIES --</option>');
+                        $.each(subcategoriesData, function (i, item) {
+                            subcategoryDropdown.append('<option value="' + item.value + '">' + item.text + '</option>');
+                        });
+                    },
+                    error: function (xhr, status, error) {
+                        console.error(xhr.responseText);
+                    }
+                });
+            });
+
+            // Event handler for subcategory change
+            $(document).on('change', '.subcategory-dropdown', function () {
+                var subcategoryId = $(this).val();
+                var categoryDropdown = $(this).closest('.form-inline').find('.category-dropdown');
+                $.ajax({
+                    type: "GET",
+                    url: "/Receipt/GetCategoryBySubcategory",
+                    data: { subcategoryId: subcategoryId },
+                    success: function (categoryId) {
+                        categoryDropdown.val(categoryId);
+                    },
+                    error: function (xhr, status, error) {
+                        console.error(xhr.responseText);
+                    }
+                });
+            });
+
+            // Event handler for product change
+            $(document).on('change', '.product-dropdown', function () {
+                var productId = $(this).val();
+                var subcategoryDropdown = $(this).closest('.form-inline').find('.subcategory-dropdown');
+                var categoryDropdown = $(this).closest('.form-inline').find('.category-dropdown');
+                $.ajax({
+                    type: "GET",
+                    url: "/Receipt/GetSubcategoryByProduct",
+                    data: { productId: productId },
+                    success: function (subcategoryId) {
+                        subcategoryDropdown.val(subcategoryId);
+                    },
+                    error: function (xhr, status, error) {
+                        console.error(xhr.responseText);
+                    }
+                });
+                $.ajax({
+                    type: "GET",
+                    url: "/Receipt/GetCategoryByProduct",
+                    data: { productId: productId },
+                    success: function (categoryId) {
+                        categoryDropdown.val(categoryId);
+                    },
+                    error: function (xhr, status, error) {
+                        console.error(xhr.responseText);
+                    }
+                });
+            });
+        });
+    </script>
+@*     <script>
+        $(document).ready(function () {
+         // Function to add a new ReceiptProduct fields section
+            function addReceiptProduct() {
+                $.get('/Receipt/GetReceiptProductPartial', function (data) {
+                    $('#receiptProductsContainer').append(data);
+                });
+            }
+
+            // Event handler for adding ReceiptProduct
+            $('#addProductBtn').click(function () {
+                event.preventDefault();
+                addReceiptProduct();
+            });
+
+            // Event handler for removing ReceiptProduct
+            $('#receiptProductsContainer').on('click', '.remove-product', function () {
+                $(this).closest('.form-inline').remove();
+            });
+
+            $("#categoryDropdown").change(function () {
+                var categoryId = $(this).val();
+                $.ajax({
+                    type: "GET",
+                    url: "/Receipt/GetSubcategoriesByCategory",
+                    data: { categoryId: categoryId },
+                    success: function (subcategoriesData) {
+                        $("#subcategoryDropdown").empty();
+                        if (categoryId == 0) {
+                            $("#subcategoryDropdown").append('<option value=0>' + "ALL SUBCATEGORIES" + '</option>');
+                        }
+                        $.each(subcategoriesData, function (i, item) {
+                            $("#subcategoryDropdown").append('<option value="' + item.value + '">' + item.text + '</option>');
+                        });
+                    },
+                    error: function (xhr, status, error) {
+                    }
+                });
+                $.ajax({
+                    type: "GET",
+                    url: "/Receipt/GetProductsByCategory",
+                    data: { categoryId: categoryId },
+                    success: function (productsData) {
+                        $("#productDropdown").empty();
+                        if (categoryId == 0) {
+                            $("#productDropdown").append('<option value=0>' + "-- SELECT PRODUCT --" + '</option>');
+                        }
+                        $.each(productsData, function (i, item) {
+                            $("#productDropdown").append('<option value="' + item.value + '">' + item.text + '</option>');
+                        });
+                    },
+                    error: function (xhr, status, error) {
+                        console.error(xhr.responseText);
+                    }
+                });
+            });
+
+            $("#subcategoryDropdown").change(function () {
+                var subcategoryId = $(this).val();
+                $.ajax({
+                    type: "GET",
+                    url: "/Receipt/GetCategoryBySubcategory",
+                    data: { subcategoryId: subcategoryId },
+                    success: function (categoryId) {
+                        $("#categoryDropdown").val(categoryId);
+                    },
+                    error: function (xhr, status, error) {
+                        console.error(xhr.responseText);
+                    }
+                });
+                $.ajax({
+                    type: "GET",
+                    url: "/Receipt/GetProductsBySubcategory",
+                    data: { subcategoryId: subcategoryId },
+                    success: function (data) {
+                        $("#productDropdown").empty();
+                        if (subcategoryId == 0) {
+                            $("#productDropdown").append('<option value=0>' + "-- SELECT PRODUCT --" + '</option>');
+                        }
+                        $.each(data, function (i, item) {
+                            $("#productDropdown").append('<option value="' + item.value + '">' + item.text + '</option>');
+                        });
+                    },
+                    error: function (xhr, status, error) {
+                        console.error(xhr.responseText);
+                    }
+                });
+            });
+
+            $("#productDropdown").change(function () {
+                console.log("Product changed:");
+                var productId = $(this).val();
+                console.log(productId);
+                $.ajax({
+                    type: "GET",
+                    url: "/Receipt/GetSubcategoryByProduct",
+                    data: { productId: productId },
+                    success: function (subcategoryId) {
+                        $("#subcategoryDropdown").val(subcategoryId);
+                    },
+                    error: function (xhr, status, error) {
+                        console.error(xhr.responseText);
+                    }
+                });
+                $.ajax({
+                    type: "GET",
+                    url: "/Receipt/GetCategoryByProduct",
+                    data: { productId: productId },
+                    success: function (categoryId) {
+                        $("#categoryDropdown").val(categoryId);
+                    },
+                    error: function (xhr, status, error) {
+                        console.error(xhr.responseText);
+                    }
+                });
+            });
+        });
+    </script> *@
+}
